@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.pytest_cache/
+.DS_Store
+
+# Training data should not be committed; include only the trained inference artifact.
+data/
+*.parquet
+*.csv
+*.jsonl

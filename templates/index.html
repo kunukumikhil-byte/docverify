@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>DocVerify — Document Toolkit</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"> <span class="brand-mark">D</span> DocVerify</a>
+  <span class="top-note">Private-by-default · Files processed per request</span>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">YOUR DOCUMENT WORKSPACE</p>
+    <h1>Everything your documents need.</h1>
+    <p class="subtitle">Compare text, convert files, and scan paper documents from your camera — all in one place.</p>
+    <div class="hero-pills"><span>✓ No account needed</span><span>✓ Max {{ max_upload_mb }} MB per file</span><span>✓ Download your results</span></div>
+  </section>
+
+  <nav class="tabs" aria-label="Tools">
+    <button class="tab active" data-panel="detect">AI detector</button>
+    <button class="tab" data-panel="convert">File converter</button>
+    <button class="tab" data-panel="camera">Camera scanner</button>
+    <button class="tab" data-panel="extract">Text extraction</button>
+  </nav>
+
+  <section class="panel active" id="panel-detect">
+    <div class="section-head"><div><p class="eyebrow">01 / AI DETECTION</p><h2>Was this text written by AI?</h2><p>Analyze writing with your own locally trained English text classifier.</p></div></div>
+    <div class="two-col">
+      <label>Paste text to analyze<textarea id="aiText" rows="12" placeholder="Paste an essay, report, or other text here. Use at least 100 characters; 500+ is recommended…"></textarea><span id="aiCharCount" class="file-label">0 characters</span></label>
+      <div class="detector-info">
+        <div class="tool-icon">✦</div><h3>AI writing analysis</h3>
+        <p>The detector estimates whether text resembles AI-generated or human-written text.</p>
+        <ul><li>Model-based classification</li><li>Model score estimates</li><li>Honest uncertainty notice</li></ul>
+        <button class="primary full" id="detectAiBtn">Analyze text</button>
+      </div>
+    </div>
+    <div id="aiResult" class="result hidden" aria-live="polite"></div>
+    <p class="fineprint">Setup required: train the included model in Google Colab and add models/ai_detector.joblib to this project. No inference API key is needed. Until the model file is added, the tool returns a setup error instead of inventing a result. Detection is not proof of authorship and may be wrong.</p>
+  </section>
+
+  <section class="panel" id="panel-convert">
+    <div class="section-head"><div><p class="eyebrow">02 / CONVERT</p><h2>Convert your files</h2><p>Turn multiple photos into one PDF or export PDF pages as images.</p></div></div>
+    <div class="convert-grid">
+      <article class="tool-card">
+        <div class="tool-icon">▧</div><h3>Images → PDF</h3><p>Choose up to 30 JPG, PNG, WebP, BMP, or TIFF images.</p>
+        <label class="file-drop">Choose images<input id="imagesInput" type="file" accept="image/*" multiple></label>
+        <p class="file-label" id="imagesLabel">No images selected</p>
+        <button class="primary full" id="imagesPdfBtn">Create PDF</button>
+      </article>
+      <article class="tool-card">
+        <div class="tool-icon">▤</div><h3>PDF → images</h3><p>Export PDF pages as PNG files bundled in a ZIP. Maximum 50 pages.</p>
+        <label class="file-drop">Choose PDF<input id="pdfInput" type="file" accept=".pdf,application/pdf"></label>
+        <p class="file-label" id="pdfLabel">No PDF selected</p>
+        <button class="primary full" id="pdfImagesBtn">Convert PDF</button>
+      </article>
+    </div>
+    <div id="convertResult" class="result hidden" aria-live="polite"></div>
+    <p class="fineprint">DOCX/PPTX/XLSX conversion to arbitrary formats is not included yet. Supported document types can be compared or have their text extracted.</p>
+  </section>
+
+  <section class="panel" id="panel-camera">
+    <div class="section-head"><div><p class="eyebrow">03 / SCAN</p><h2>Scan using your camera</h2><p>Capture multiple pages, review them, then create a single PDF.</p></div></div>
+    <div class="camera-layout">
+      <div class="camera-view">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <div id="cameraPlaceholder" class="camera-placeholder"><span>▣</span><p>Camera preview appears here</p><small>Allow camera access when your browser asks.</small></div>
+      </div>
+      <div class="camera-actions">
+        <button class="primary full" id="startCameraBtn">Start camera</button>
+        <button class="secondary full" id="captureBtn" disabled>Capture page</button>
+        <button class="secondary full" id="stopCameraBtn" disabled>Stop camera</button>
+        <p id="cameraStatus" class="file-label" aria-live="polite">Camera not started.</p>
+        <canvas id="captureCanvas" hidden></canvas>
+      </div>
+    </div>
+    <div class="scan-pages"><div class="scan-heading"><h3>Captured pages</h3><span id="pageCount">0 pages</span></div><div id="pageThumbs" class="thumbs"></div></div>
+    <button class="primary" id="scanPdfBtn" disabled>Download scanned PDF</button>
+    <button class="secondary" id="clearPagesBtn" disabled>Clear pages</button>
+    <div id="cameraResult" class="result hidden" aria-live="polite"></div>
+    <p class="fineprint">Camera access usually requires HTTPS (Vercel provides it) or localhost. Scanning captures images; automatic edge detection and OCR are not enabled in this version.</p>
+  </section>
+
+  <section class="panel" id="panel-extract">
+    <div class="section-head"><div><p class="eyebrow">04 / EXTRACT</p><h2>Extract text from a file</h2><p>Read text from PDF, TXT, DOCX, PPTX, and XLSX files.</p></div></div>
+    <label class="file-drop extract-drop">Choose a document<input id="extractInput" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx"></label>
+    <p class="file-label" id="extractLabel">No file selected</p>
+    <button class="primary" id="extractBtn">Extract text</button>
+    <div id="extractResult" class="result hidden" aria-live="polite"></div>
+  </section>
+
+  <section class="privacy"><span class="privacy-icon">◈</span><div><strong>Designed for careful file handling</strong><p>Uploads are processed in memory and are not intentionally saved as a permanent file. Do not upload sensitive documents to a public demo unless you understand the hosting provider's processing and logging policies.</p></div></section>
+  <footer>DocVerify · Document tools for everyday work</footer>
+</main>
+<script src="/static/script.js" defer></script>
+</body>
+</html>
