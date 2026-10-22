@@ -1,3 +1,4 @@
+
 {
   "version": 2,
   "builds": [
@@ -19,11 +20,5 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "includeFiles": "models/ai_detector.joblib",
-      "excludeFiles": "{tests/**,**/*.test.py,train_ai_detector.py,requirements-train.txt,colab_train.ipynb,static/**,data/**}"
-    }
-  }
+  ]
 }
