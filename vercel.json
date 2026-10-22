@@ -1,9 +1,13 @@
+
 {
   "version": 2,
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "models/ai_detector.joblib"
+      }
     },
     {
       "src": "static/**",
@@ -19,11 +23,5 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "includeFiles": "models/ai_detector.joblib",
-      "excludeFiles": "{tests/**,**/*.test.py,train_ai_detector.py,requirements-train.txt,colab_train.ipynb,static/**,data/**}"
-    }
-  }
+  ]
 }
