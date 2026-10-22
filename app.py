@@ -22,7 +22,7 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "4"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 ALLOWED_EXTENSIONS = {
     "pdf", "png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff",
-    "txt", "docx", "pptx", "xlsx"
+    "txt", "docx", "pptx", "xlsx", "odt"
 }
 
 app = Flask(__name__)
@@ -55,7 +55,7 @@ def get_upload(field="file", required=True):
         raise ValueError("The filename is invalid.")
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
     if ext not in ALLOWED_EXTENSIONS:
-        raise ValueError("Unsupported file type. Supported: PDF, images, TXT, DOCX, PPTX, XLSX.")
+        raise ValueError("Unsupported file type. Supported: PDF, images, TXT, DOCX, PPTX, XLSX, ODT.")
     data = uploaded.read(MAX_UPLOAD_BYTES + 1)
     if not data:
         raise ValueError("The selected file is empty.")
@@ -96,6 +96,12 @@ def extract_text(name, ext, data):
                     rows.append(" | ".join("" if v is None else str(v) for v in row))
             wb.close()
             return "\n".join(rows)
+        if ext == "odt":
+            import xml.etree.ElementTree as ET
+            with zipfile.ZipFile(BytesIO(data)) as archive:
+                content = archive.read("content.xml")
+            root = ET.fromstring(content)
+            return "\n".join(part.strip() for part in root.itertext() if part.strip())
         if ext in {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}:
             return ""
     except Exception as exc:
@@ -324,6 +330,100 @@ def pdf_to_images():
             return error(str(exc))
         app.logger.exception("PDF conversion failed")
         return error("Could not read this PDF. It may be corrupted or encrypted.")
+
+
+@app.post("/api/convert/document")
+def convert_document():
+    """Convert text-extractable documents to TXT, DOCX, or simple text PDF."""
+    try:
+        name, ext, data = get_upload()
+        target = (request.form.get("target") or "").lower().strip()
+        if target not in {"txt", "docx", "pdf"}:
+            return error("Choose TXT, DOCX, or PDF as the output format.")
+        if ext in {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}:
+            return error("For images, use Images → PDF.")
+        text = extract_text(name, ext, data)
+        if not text.strip():
+            return error("No selectable text was found. Scanned/image-only PDFs need OCR before conversion.")
+        output = BytesIO(); stem = os.path.splitext(name)[0][:80] or "docverify-document"
+        if target == "txt":
+            output.write(text.encode("utf-8")); mimetype, suffix = "text/plain; charset=utf-8", ".txt"
+        elif target == "docx":
+            doc = Document()
+            for paragraph in text.splitlines(): doc.add_paragraph(paragraph)
+            doc.save(output); mimetype, suffix = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"
+        else:
+            pdf_canvas = canvas.Canvas(output, pagesize=(595.27, 841.89))
+            text_obj = pdf_canvas.beginText(48, 790); text_obj.setFont("Helvetica", 10)
+            for line in text.splitlines():
+                chunks = [line[i:i+95] for i in range(0, max(1,len(line)),95)] or [""]
+                for chunk in chunks:
+                    if text_obj.getY() < 48:
+                        pdf_canvas.drawText(text_obj); pdf_canvas.showPage(); text_obj=pdf_canvas.beginText(48,790); text_obj.setFont("Helvetica",10)
+                    text_obj.textLine(chunk.encode("latin-1",errors="replace").decode("latin-1"))
+            pdf_canvas.drawText(text_obj); pdf_canvas.save(); mimetype, suffix = "application/pdf", ".pdf"
+        output.seek(0)
+        return send_file(output,mimetype=mimetype,as_attachment=True,download_name=stem+suffix)
+    except ValueError as exc: return error(str(exc))
+    except Exception:
+        app.logger.exception("Document conversion failed")
+        return error("Could not convert this document. It may be corrupted, encrypted, or unsupported.",500)
+
+
+@app.post("/api/crop/pdf")
+def crop_pdf():
+    uploaded=request.files.get("file")
+    if not uploaded or not uploaded.filename: return error("Choose a PDF first.")
+    if not secure_filename(uploaded.filename).lower().endswith(".pdf"): return error("Upload a PDF file.")
+    data=uploaded.read(MAX_UPLOAD_BYTES+1)
+    if not data: return error("The selected file is empty.")
+    if len(data)>MAX_UPLOAD_BYTES: return error(f"File is too large. Maximum size is {MAX_UPLOAD_MB} MB.")
+    try:
+        margins=[float(request.form.get(k,"5")) for k in ("left","top","right","bottom")]
+        left,top,right,bottom=margins
+        if any(v<0 or v>=45 for v in margins) or left+right>=90 or top+bottom>=90: return error("Crop margins must be 0–44% each, with enough page area left.")
+        choice=(request.form.get("page") or "all").strip().lower()
+        with fitz.open(stream=data,filetype="pdf") as pdf:
+            if len(pdf)>50: return error("PDF has more than 50 pages. Split it before cropping.")
+            if choice!="all":
+                try: index=int(choice)-1
+                except ValueError: return error("Page must be 'all' or a page number.")
+                if index<0 or index>=len(pdf): return error(f"Page number must be between 1 and {len(pdf)}.")
+                indices=[index]
+            else: indices=range(len(pdf))
+            for index in indices:
+                page=pdf[index]; rect=page.rect
+                page.set_cropbox(fitz.Rect(rect.x0+rect.width*left/100,rect.y0+rect.height*top/100,rect.x1-rect.width*right/100,rect.y1-rect.height*bottom/100))
+            out=BytesIO(pdf.tobytes(garbage=3,deflate=True))
+        out.seek(0); stem=os.path.splitext(secure_filename(uploaded.filename))[0] or "document"
+        return send_file(out,mimetype="application/pdf",as_attachment=True,download_name=stem+"-cropped.pdf")
+    except ValueError as exc: return error(str(exc))
+    except Exception:
+        app.logger.exception("PDF crop failed"); return error("Could not crop this PDF. It may be corrupted or encrypted.",500)
+
+
+@app.post("/api/crop/image")
+def crop_image():
+    uploaded=request.files.get("file")
+    if not uploaded or not uploaded.filename: return error("Choose an image first.")
+    name=secure_filename(uploaded.filename); ext=name.rsplit(".",1)[-1].lower() if "." in name else ""
+    if ext not in {"png","jpg","jpeg","webp","bmp","tif","tiff"}: return error("Upload a PNG, JPG, WebP, BMP, or TIFF image.")
+    data=uploaded.read(MAX_UPLOAD_BYTES+1)
+    if not data: return error("The selected file is empty.")
+    if len(data)>MAX_UPLOAD_BYTES: return error(f"File is too large. Maximum size is {MAX_UPLOAD_MB} MB.")
+    try:
+        margins=[float(request.form.get(k,"5")) for k in ("left","top","right","bottom")]; left,top,right,bottom=margins
+        if any(v<0 or v>=45 for v in margins) or left+right>=90 or top+bottom>=90: return error("Crop margins must be 0–44% each, with enough image area left.")
+        with Image.open(BytesIO(data)) as original:
+            image=ImageOps.exif_transpose(original); w,h=image.size
+            cropped=image.crop((int(w*left/100),int(h*top/100),int(w*(1-right/100)),int(h*(1-bottom/100))))
+            if cropped.width<1 or cropped.height<1: return error("Crop area is too small.")
+            fmt="JPEG" if ext in {"jpg","jpeg"} else "WEBP" if ext=="webp" else "PNG"
+            out=BytesIO(); cropped.convert("RGB" if fmt=="JPEG" else "RGBA").save(out,format=fmt); out.seek(0)
+        mime={"JPEG":"image/jpeg","PNG":"image/png","WEBP":"image/webp"}[fmt]; suffix={"JPEG":".jpg","PNG":".png","WEBP":".webp"}[fmt]
+        return send_file(out,mimetype=mime,as_attachment=True,download_name=os.path.splitext(name)[0]+"-cropped"+suffix)
+    except Exception:
+        app.logger.exception("Image crop failed"); return error("Could not crop this image. It may be corrupted.",500)
 
 
 @app.errorhandler(RequestEntityTooLarge)

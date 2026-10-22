@@ -118,3 +118,13 @@ python -m unittest discover -s tests -v
 - Vercel's local filesystem is ephemeral. This project does not promise persistent document history across serverless invocations.
 - Test locally before pushing: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python app.py`.
 - AI detection is an experimental estimate, not proof of authorship. The reported held-out metrics can overstate real-world performance if test examples resemble training data; do not use the score alone for disciplinary or high-stakes decisions.
+
+
+## Added document tools
+
+- Compare two PDF, TXT, DOCX, PPTX, XLSX, or ODT files by extracted text.
+- Convert text-extractable supported documents into TXT, DOCX, or simple text-based PDF.
+- Crop PDF pages (one page or all pages) and raster images using percentage margins.
+- Existing image-to-PDF, PDF-to-image ZIP, camera scanning, text extraction, and local AI-text detector remain available.
+
+Conversions are content-oriented, not layout-perfect. Complex formatting, charts, comments, embedded objects, spreadsheet formatting, and macros may not survive. Legacy .doc, OCR for image-only PDFs, internet-wide plagiarism search, and layout-perfect DOCX-to-PDF are not included. The plagiarism score compares only the uploaded pair and is not proof of misconduct.

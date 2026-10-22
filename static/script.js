@@ -91,6 +91,13 @@ $("extractBtn").addEventListener("click",async e=>{
     $("copyExtracted").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(data.text);$("copyExtracted").textContent="Copied";}catch{$("copyExtracted").textContent="Copy unavailable";}});
   } catch(err){showResult($("extractResult"),`<p>${escapeHtml(err.message)}</p>`);}finally{buttonBusy(btn,false);}
 });
+
+$("plagCompareBtn").addEventListener("click",async e=>{const btn=e.currentTarget;buttonBusy(btn,true,"Comparing…");try{const a=$("plagFile1").files[0],b=$("plagFile2").files[0];if(!a||!b)throw new Error("Choose both documents first.");const data=await requestJson("/api/plagiarism/compare",{method:"POST",body:fileForm([["file1",a],["file2",b]])});renderComparison($("plagResult"),data);}catch(err){showResult($("plagResult"),`<h3>Could not compare documents</h3><p>${escapeHtml(err.message)}</p>`);}finally{buttonBusy(btn,false);}});
+$("convertDocInput").addEventListener("change",()=>{$("convertDocLabel").textContent=$("convertDocInput").files[0]?.name||"No document selected";});
+$("convertDocBtn").addEventListener("click",async e=>{const btn=e.currentTarget;buttonBusy(btn,true,"Converting…");try{const f=$("convertDocInput").files[0];if(!f)throw new Error("Choose a document first.");await downloadResponse("/api/convert/document",fileForm([["file",f],["target",$("convertTarget").value]]),"converted-document",$("convertResult"));}catch(err){showResult($("convertResult"),`<p>${escapeHtml(err.message)}</p>`);}finally{buttonBusy(btn,false);}});
+$("cropInput").addEventListener("change",()=>{const f=$("cropInput").files[0];$("cropLabel").textContent=f?.name||"No file selected";$("cropPageWrap").classList.toggle("hidden",!!f&&!f.name.toLowerCase().endsWith(".pdf"));});
+$("cropBtn").addEventListener("click",async e=>{const btn=e.currentTarget;buttonBusy(btn,true,"Cropping…");try{const f=$("cropInput").files[0];if(!f)throw new Error("Choose a PDF or image first.");const entries=[["file",f],["left",$("cropLeft").value],["top",$("cropTop").value],["right",$("cropRight").value],["bottom",$("cropBottom").value]];const isPdf=f.name.toLowerCase().endsWith(".pdf");if(isPdf)entries.push(["page",$("cropPage").value.trim()||"all"]);await downloadResponse(isPdf?"/api/crop/pdf":"/api/crop/image",fileForm(entries),"cropped-file",$("cropResult"));}catch(err){showResult($("cropResult"),`<p>${escapeHtml(err.message)}</p>`);}finally{buttonBusy(btn,false);}});
+
 function updatePages(){
   $("pageCount").textContent=`${state.pages.length} page${state.pages.length===1?"":"s"}`;
   $("scanPdfBtn").disabled=!state.pages.length;$("clearPagesBtn").disabled=!state.pages.length;

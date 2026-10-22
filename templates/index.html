@@ -22,9 +22,11 @@
 
   <nav class="tabs" aria-label="Tools">
     <button class="tab active" data-panel="detect">AI detector</button>
+    <button class="tab" data-panel="plagiarism">Plagiarism check</button>
     <button class="tab" data-panel="convert">File converter</button>
     <button class="tab" data-panel="camera">Camera scanner</button>
     <button class="tab" data-panel="extract">Text extraction</button>
+    <button class="tab" data-panel="crop">Crop tools</button>
   </nav>
 
   <section class="panel active" id="panel-detect">
@@ -43,7 +45,7 @@
   </section>
 
   <section class="panel" id="panel-convert">
-    <div class="section-head"><div><p class="eyebrow">02 / CONVERT</p><h2>Convert your files</h2><p>Turn multiple photos into one PDF or export PDF pages as images.</p></div></div>
+    <div class="section-head"><div><p class="eyebrow">02 / CONVERT</p><h2>Convert your files</h2><p>Convert text-extractable documents to TXT, DOCX, or PDF; also convert images and PDF pages.</p></div></div>
     <div class="convert-grid">
       <article class="tool-card">
         <div class="tool-icon">▧</div><h3>Images → PDF</h3><p>Choose up to 30 JPG, PNG, WebP, BMP, or TIFF images.</p>
@@ -58,8 +60,22 @@
         <button class="primary full" id="pdfImagesBtn">Convert PDF</button>
       </article>
     </div>
+    <article class="tool-card conversion-card">
+      <div class="tool-icon">⇄</div><h3>Document → TXT / DOCX / PDF</h3><p>Extract text from PDF, DOCX, TXT, PPTX, XLSX, or ODT and save it as TXT, DOCX, or PDF.</p>
+      <label class="file-drop">Choose document<input id="convertDocInput" type="file" accept=".pdf,.docx,.txt,.pptx,.xlsx,.odt"></label><p class="file-label" id="convertDocLabel">No document selected</p>
+      <label>Output format<select id="convertTarget"><option value="docx">Word document (.docx)</option><option value="pdf">PDF (.pdf)</option><option value="txt">Plain text (.txt)</option></select></label>
+      <button class="primary full" id="convertDocBtn">Convert document</button>
+    </article>
     <div id="convertResult" class="result hidden" aria-live="polite"></div>
-    <p class="fineprint">DOCX/PPTX/XLSX conversion to arbitrary formats is not included yet. Supported document types can be compared or have their text extracted.</p>
+    <p class="fineprint">Conversions are text-oriented and may not preserve complex formatting, charts, comments, embedded objects, or spreadsheet layouts. Legacy .doc and layout-perfect DOCX-to-PDF conversion are not included in this serverless version.</p>
+  </section>
+
+
+  <section class="panel" id="panel-plagiarism">
+    <div class="section-head"><div><p class="eyebrow">02 / PLAGIARISM CHECK</p><h2>Compare two documents</h2><p>Upload two supported documents to find shared passages and estimate text overlap.</p></div></div>
+    <div class="two-col"><label>Original / reference document<input id="plagFile1" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx,.odt"></label><label>Document to compare<input id="plagFile2" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx,.odt"></label></div>
+    <button class="primary" id="plagCompareBtn">Compare documents</button><div id="plagResult" class="result hidden" aria-live="polite"></div>
+    <p class="fineprint">This compares only the two uploaded files. It does not search the internet or academic databases. Similarity alone is not proof of plagiarism. Scanned PDFs need OCR first.</p>
   </section>
 
   <section class="panel" id="panel-camera">
@@ -85,11 +101,21 @@
   </section>
 
   <section class="panel" id="panel-extract">
-    <div class="section-head"><div><p class="eyebrow">04 / EXTRACT</p><h2>Extract text from a file</h2><p>Read text from PDF, TXT, DOCX, PPTX, and XLSX files.</p></div></div>
-    <label class="file-drop extract-drop">Choose a document<input id="extractInput" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx"></label>
+    <div class="section-head"><div><p class="eyebrow">04 / EXTRACT</p><h2>Extract text from a file</h2><p>Read text from PDF, TXT, DOCX, PPTX, XLSX, and ODT files.</p></div></div>
+    <label class="file-drop extract-drop">Choose a document<input id="extractInput" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx,.odt"></label>
     <p class="file-label" id="extractLabel">No file selected</p>
     <button class="primary" id="extractBtn">Extract text</button>
     <div id="extractResult" class="result hidden" aria-live="polite"></div>
+  </section>
+
+
+  <section class="panel" id="panel-crop">
+    <div class="section-head"><div><p class="eyebrow">06 / CROP</p><h2>Crop a PDF page or image</h2><p>Trim margins by percentage and download a cropped copy.</p></div></div>
+    <label class="file-drop">Choose PDF or image<input id="cropInput" type="file" accept=".pdf,image/*"></label><p id="cropLabel" class="file-label">No file selected</p>
+    <div class="crop-fields"><label>Left margin (%)<input id="cropLeft" type="number" min="0" max="44" value="5"></label><label>Top margin (%)<input id="cropTop" type="number" min="0" max="44" value="5"></label><label>Right margin (%)<input id="cropRight" type="number" min="0" max="44" value="5"></label><label>Bottom margin (%)<input id="cropBottom" type="number" min="0" max="44" value="5"></label></div>
+    <label id="cropPageWrap">PDF page number or "all" (ignored for images)<input id="cropPage" type="text" value="all" maxlength="10"></label>
+    <button class="primary" id="cropBtn">Crop and download</button><div id="cropResult" class="result hidden" aria-live="polite"></div>
+    <p class="fineprint">This version crops by margins rather than a drag-to-select rectangle. PDF crop boxes change the visible page area; they do not securely erase the underlying original content.</p>
   </section>
 
   <section class="privacy"><span class="privacy-icon">◈</span><div><strong>Designed for careful file handling</strong><p>Uploads are processed in memory and are not intentionally saved as a permanent file. Do not upload sensitive documents to a public demo unless you understand the hosting provider's processing and logging policies.</p></div></section>
