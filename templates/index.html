@@ -33,6 +33,10 @@
     <div class="section-head"><div><p class="eyebrow">01 / AI DETECTION</p><h2>Was this text written by AI?</h2><p>Analyze writing with your own locally trained English text classifier.</p></div></div>
     <div class="two-col">
       <label>Paste text to analyze<textarea id="aiText" rows="12" placeholder="Paste an essay, report, or other text here. Use at least 100 characters; 500+ is recommended…"></textarea><span id="aiCharCount" class="file-label">0 characters</span></label>
+      <div class="or-divider"><span>OR ANALYZE A DOCUMENT DIRECTLY</span></div>
+      <label class="file-drop">Choose PDF or document<input id="aiFileInput" type="file" accept=".pdf,.txt,.docx,.pptx,.xlsx,.odt,application/pdf,text/plain"></label>
+      <p id="aiFileLabel" class="file-label">No document selected</p>
+      <button class="secondary full" id="detectFileBtn" type="button">Analyze uploaded document</button>
       <div class="detector-info">
         <div class="tool-icon">✦</div><h3>AI writing analysis</h3>
         <p>The detector estimates whether text resembles AI-generated or human-written text.</p>

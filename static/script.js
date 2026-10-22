@@ -29,6 +29,28 @@ function renderComparison(el, data) {
 $("aiText").addEventListener("input", () => {
   $("aiCharCount").textContent = `${$("aiText").value.length.toLocaleString()} characters`;
 });
+$("aiFileInput").addEventListener("change", () => {
+  $("aiFileLabel").textContent = $("aiFileInput").files[0]?.name || "No document selected";
+});
+$("detectFileBtn").addEventListener("click", async e => {
+  const btn = e.currentTarget;
+  buttonBusy(btn, true, "Extracting and analyzing…");
+  try {
+    const file = $("aiFileInput").files[0];
+    if (!file) throw new Error("Choose a PDF or document first.");
+    const form = new FormData();
+    form.append("file", file);
+    const data = await requestJson("/api/ai-detect", {method: "POST", body: form});
+    const ai = Number(data.ai_likelihood_percent || 0);
+    const human = Number(data.human_likelihood_percent || 0);
+    const label = data.verdict || "Inconclusive";
+    showResult($("aiResult"), `<div class="score">${ai.toFixed(1)}%</div><p><strong>AI-likelihood estimate</strong></p><p>Human-likelihood estimate: <strong>${human.toFixed(1)}%</strong></p><p><strong>${escapeHtml(label)}</strong></p><p class="fineprint">File: ${escapeHtml(file.name)} · Model: ${escapeHtml(data.model || "local trained detector")}</p><p>${escapeHtml(data.note || "")}</p>`);
+  } catch (err) {
+    showResult($("aiResult"), `<h3>Could not analyze document</h3><p>${escapeHtml(err.message)}</p><p class="fineprint">Scanned PDFs with no selectable text require OCR. Detection is an estimate, not proof of authorship.</p>`);
+  } finally {
+    buttonBusy(btn, false);
+  }
+});
 $("detectAiBtn").addEventListener("click", async e => {
   const btn = e.currentTarget;
   buttonBusy(btn, true, "Analyzing…");

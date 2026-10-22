@@ -217,12 +217,26 @@ def plagiarism_text():
 
 @app.post("/api/ai-detect")
 def ai_detect():
-    """Run the locally trained classifier. No hosted inference API or token is used."""
-    payload = request.get_json(silent=True) or {}
-    text = payload.get("text", "")
-    if not isinstance(text, str):
-        return error("Text must be a string.")
-    text = text.strip()
+    """Analyze pasted text or extract and analyze text from an uploaded document/PDF."""
+    uploaded = request.files.get("file")
+    if uploaded and uploaded.filename:
+        try:
+            name, ext, raw = get_upload("file")
+            if ext not in {"pdf", "txt", "docx", "pptx", "xlsx", "odt"}:
+                return error("AI detection supports PDF, TXT, DOCX, PPTX, XLSX, and ODT files.")
+            text = extract_text(name, ext, raw).strip()
+            if not text:
+                if ext == "pdf":
+                    return error("No selectable text was found in this PDF. It may be a scanned/image-only PDF; OCR is required before AI detection.")
+                return error("No extractable text was found in this document.")
+        except ValueError as exc:
+            return error(str(exc))
+    else:
+        payload = request.get_json(silent=True) or {}
+        text = payload.get("text", "")
+        if not isinstance(text, str):
+            return error("Text must be a string.")
+        text = text.strip()
     if len(text) < 100:
         return error("Enter at least 100 characters. Longer samples (500+ characters) usually provide a more useful estimate.")
     if len(text) > 20_000:

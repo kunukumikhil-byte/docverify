@@ -128,3 +128,10 @@ python -m unittest discover -s tests -v
 - Existing image-to-PDF, PDF-to-image ZIP, camera scanning, text extraction, and local AI-text detector remain available.
 
 Conversions are content-oriented, not layout-perfect. Complex formatting, charts, comments, embedded objects, spreadsheet formatting, and macros may not survive. Legacy .doc, OCR for image-only PDFs, internet-wide plagiarism search, and layout-perfect DOCX-to-PDF are not included. The plagiarism score compares only the uploaded pair and is not proof of misconduct.
+
+
+## Direct PDF AI detection
+
+Open the AI Detector tab, choose a PDF under “Analyze a document directly”, then click “Analyze uploaded document”. The app extracts selectable PDF text with PyMuPDF and sends that text to `models/ai_detector.joblib`. Scanned/image-only PDFs need OCR and will return a clear message instead of a fabricated result.
+
+The Vercel configuration uses `builds` only and includes the trained model file. Do not add a `functions` property to the same `vercel.json`, because Vercel does not allow `builds` and `functions` together.
