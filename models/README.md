@@ -1,5 +1,3 @@
-# Trained model artifact
+# Trained AI detector model
 
-After running `train_ai_detector.py`, the script creates `ai_detector.joblib` here.
-The artifact is intentionally not included in the starter ZIP because it must be trained from the dataset first.
-Copy the resulting file into this folder before deploying DocVerify. Do not commit raw training data.
+`ai_detector.joblib` is the trained DocVerify TF-IDF + Logistic Regression bundle. It contains `pipeline` and `metadata`; class 0 is human-written and class 1 is AI-generated. The app expects scikit-learn 1.6.1. Only load model artifacts from sources you trust.
